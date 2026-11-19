@@ -21,6 +21,9 @@ An interactive 3D aerospace engineering and spaceflight simulation web applicati
 - **Standalone Portable Files:**
   - `space-mission-designer.html` — single-file offline production bundle of the 3D simulator.
   - `space-mission-101-slides.html` — 7-slide interactive presentation deck with embedded visuals and PDF print support.
+- **Game File:**
+   - https://space-mission-designer.ai.studio — Local HTML game file .
+   
 
 ## NASA & Aerospace Open Data References
 

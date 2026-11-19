@@ -1,0 +1,14 @@
+{
+  "name": "Space Mission Designer",
+  "description": "3D aerospace engineering and spaceflight simulation game featuring a futuristic space agency HQ, modular rocket and spacecraft designers, realistic launch sequences, and a 5-mission campaign. AI tools assisted in generating application code, synthesized audio/speech integration, curated aerospace reference data, and visual assets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ],
+  "aiDisclosure": {
+    "code": "AI-assisted TypeScript, React, and Three.js simulation code generation and refactoring.",
+    "audio": "AI-assisted Web Audio API procedural sound synthesis and Web Speech API countdown integration.",
+    "data": "AI-assisted structuring of curated NASA/aerospace physics benchmarks, vehicle datasets, and LLIS case references.",
+    "images": "AI-generated presentation visuals watermarked where displayed."
+  }
+}

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPACE MISSION DESIGNER - GTA Edition &amp; NASA Aerospace Simulation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- GTA TOP-RIGHT HUD: CASH COUNTER & 5-STAR WANTED / DANGER LEVEL -->
+    <div class="gta-hud-topright">
+        <div class="gta-cash-counter" id="gta-cash-display">
+            <span class="currency-symbol">$</span><span id="gta-cash-val">160,000,000</span>
+        </div>
+        <div class="gta-wanted-stars" id="gta-wanted-stars">
+            <span class="star active">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+    </div>
+
+    <!-- GTA BOTTOM-LEFT RADAR MINIMAP (GPS RADAR DISC) -->
+    <div class="gta-minimap-container">
+        <div class="gta-radar-disc">
+            <div class="gta-radar-cross"></div>
+            <div class="gta-radar-cross vert"></div>
+            <div class="gta-radar-ring ring-1"></div>
+            <div class="gta-radar-ring ring-2"></div>
+            <div class="gta-radar-cardinals">
+                <span class="cardinal-n">N</span>
+                <span class="cardinal-s">S</span>
+                <span class="cardinal-e">E</span>
+                <span class="cardinal-w">W</span>
+            </div>
+            <div class="gta-player-blip" id="radar-player-blip"></div>
+            <div class="gta-target-blip" id="radar-target-blip"></div>
+        </div>
+
+        <div class="gta-radar-stats">
+            <div class="stat-row"><span>ALT:</span> <b id="radar-alt">0.0 km</b></div>
+            <div class="stat-row"><span>SPD:</span> <b id="radar-spd">0 m/s</b></div>
+            <div class="stat-row"><span>ZONE:</span> <b id="radar-zone">LC-39A PAD</b></div>
+        </div>
+    </div>
+
+    <!-- GTA MISSION PASSED CELEBRATION BANNER -->
+    <div class="gta-mission-passed-overlay" id="gta-passed-banner">
+        <div class="gta-passed-stripe">
+            <div class="gta-passed-title">MISSION PASSED!</div>
+            <div class="gta-passed-sub">RESPECT +</div>
+            <div class="gta-passed-reward" id="gta-passed-reward">TOTAL CASH: +$45,000,000</div>
+        </div>
+    </div>
+
+    <!-- GTA WASTED FULL-SCREEN OVERLAY -->
+    <div class="gta-wasted-overlay" id="gta-wasted-overlay">
+        <div class="gta-wasted-text">WASTED</div>
+    </div>
+
+    <!-- Top Mission Control Navigation Bar -->
+    <header id="top-nav">
+        <div class="nav-left">
+            <div class="agency-brand">
+                <span class="brand-icon"></span>
+                <div>
+                    <span class="brand-title">SPACE MISSION DESIGNER</span>
+                    <span class="brand-station">NASA GSFC • KSC LC-39A • HOUSTON MCC</span>
+                </div>
+            </div>
+
+            <!-- Facility Station Segmented Navigation -->
+            <nav class="hq-nav-pills">
+                <button class="btn-hq-nav active" data-target="station_mission_control">MCC CENTER</button>
+                <button class="btn-hq-nav" data-target="station_vab">ROCKET VAB</button>
+                <button class="btn-hq-nav" data-target="station_spacecraft">CLEANROOM</button>
+                <button class="btn-hq-nav" data-target="station_launchpad">PAD-39A</button>
+                <button class="btn-hq-nav" data-target="station_orrery">ORRERY</button>
+            </nav>
+        </div>
+
+        <div class="nav-right">
+            <!-- Operations Action Buttons -->
+            <button class="btn btn-primary" id="btn-open-missions">MISSIONS</button>
+            <button class="btn" id="btn-open-vab">ROCKET VAB</button>
+            <button class="btn" id="btn-open-spacecraft">PAYLOAD LAB</button>
+            <button class="btn" id="btn-open-tech">R&amp;D TECH</button>
+            <button class="btn-icon" id="btn-toggle-sound" title="Audio / Voice Comms Toggle">AUDIO: ON</button>
+        </div>
+    </header>
+
+    <!-- First-Person Walk Interaction Tooltip -->
+    <div id="interaction-prompt">
+        <span class="key-badge">E</span> ACCESS STATION CONSOLE
+    </div>
+
+    <!-- Controls Hint -->
+    <div id="controls-hint">
+        CONTROLS: [W/A/S/D] Walk • [Shift] Sprint • [Mouse Drag] Camera Pan • [E] Access Console
+    </div>
+
+    <!-- 1. REALISTIC FLIGHT HUD (Active during Launch & Ascent) -->
+    <div id="launch-hud" class="hud-layer hidden">
+        <!-- Top Telemetry Block -->
+        <div class="hud-top-telemetry">
+            <div class="telemetry-box">
+                <span class="label">ALTITUDE</span>
+                <span class="val" id="hud-alt">0.0 km</span>
+            </div>
+            <div class="telemetry-box">
+                <span class="label">VELOCITY (INERTIAL)</span>
+                <span class="val" id="hud-vel">0 m/s</span>
+            </div>
+            <div class="telemetry-box">
+                <span class="label">MISSION ELAPSED TIME</span>
+                <span class="val" id="hud-met">T-00:10</span>
+            </div>
+            <div class="telemetry-box">
+                <span class="label">ACCEL / G-LOAD</span>
+                <span class="val" id="hud-gforce">1.0 G</span>
+            </div>
+            <div class="telemetry-box">
+                <span class="label">DYNAMIC PRESSURE (Q)</span>
+                <span class="val" id="hud-q">0.0 kPa</span>
+            </div>
+        </div>
+
+        <!-- Left Speed Tape & Right Altitude Tape -->
+        <div class="tape-gauge-left">
+            <div class="tape-title">AIRSPEED</div>
+            <div class="tape-val" id="hud-tape-speed">0 m/s</div>
+        </div>
+
+        <!-- Center Flight Reticle / Level Indicator -->
+        <div class="hud-flight-reticle">
+            <div class="reticle-ring">
+                <div class="reticle-dot"></div>
+                <div class="reticle-ladder"></div>
+            </div>
+        </div>
+
+        <div class="tape-gauge-right">
+            <div class="tape-title">ALTITUDE</div>
+            <div class="tape-val" id="hud-tape-alt">0.0 km</div>
+        </div>
+
+        <!-- Propellant Status Bar -->
+        <div class="hud-fuel-panel">
+            <span class="fuel-label">TOTAL USABLE PROPELLANT RESERVE</span>
+            <div class="fuel-progress-bar">
+                <div class="fuel-fill" id="hud-fuel-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Optical Tracking Camera Selector -->
+        <div class="hud-cam-controls">
+            <button class="btn-cam-switch active" data-cam="GROUND">PAD TRACKING</button>
+            <button class="btn-cam-switch" data-cam="CHASE">CHASE CAM</button>
+            <button class="btn-cam-switch" data-cam="ONBOARD">BOOSTER CAM</button>
+            <button class="btn-cam-switch" data-cam="FAIRING">FAIRING CAM</button>
+            <button class="btn-cam-switch" data-cam="ORBIT">ORBITAL WIDE</button>
+        </div>
+
+        <!-- Throttle & Abort Bar -->
+        <div class="hud-bottom-controls">
+            <div class="throttle-control-box">
+                <span class="throttle-label">THRUST CONTROL PROGRAM</span>
+                <div class="slider-wrapper">
+                    <input type="range" id="throttle-slider" min="0" max="1" step="0.05" value="1">
+                    <span class="hotkeys-hint">HOTKEYS: [Z] 100% • [X] 0% • [Shift/Ctrl] TRIM</span>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" id="btn-flight-abort">ABORT FLIGHT</button>
+        </div>
+    </div>
+
+    <!-- 2. SPACE FLIGHT & DOCKING HUD -->
+    <div id="flight-hud" class="hud-layer hidden">
+        <div class="flight-hud-panel">
+            <div class="flight-hud-header">
+                <span class="badge" id="flight-mode-badge">ORBITAL TRAJECTORY</span>
+                <div id="flight-metric-1">ORBITAL V: <b>7,820 m/s</b></div>
+                <div id="flight-metric-2">APO / PERI: <b>255 / 248 km</b></div>
+            </div>
+            <div class="flight-telemetry-row">
+                <span>RCS PROPELLANT:</span>
+                <div class="fuel-progress-bar mini"><div class="fuel-fill" id="flight-fuel-bar" style="width: 100%;"></div></div>
+                <span>THROTTLE: <b id="flight-throttle-val">0%</b></span>
+            </div>
+            <div class="flight-controls-guide">
+                MANUAL ATTITUDE: [W/S] Pitch • [A/D] Yaw • [Q/E] Roll • [Z/X] Throttle Max/Cut
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: MISSION MATRIX -->
+    <div class="ui-modal" id="modal-missions">
+        <div class="modal-dialog large">
+            <div class="modal-header">
+                <h2>FLIGHT OPERATIONS • MISSION MATRIX</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="missions-list" class="missions-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ROCKET VAB ASSEMBLY -->
+    <div class="ui-modal" id="modal-vab">
+        <div class="modal-dialog extra-large">
+            <div class="modal-header">
+                <h2>VEHICLE ASSEMBLY BUILDING (VAB) • ROCKET STACK BUILDER</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body modal-columns">
+                <!-- Left: Hardware Configuration -->
+                <div class="vab-controls-column">
+                    <div class="section-header">STAGE PROPULSION &amp; STRUCTURE SPECIFICATIONS</div>
+
+                    <div class="form-group">
+                        <label>STAGE 1 FIRST-STAGE PROPULSION CORE</label>
+                        <select id="sel-s1-engine" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>STAGE 1 PROPELLANT TANK</label>
+                        <select id="sel-s1-tank" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>STRAP-ON BOOSTERS</label>
+                        <select id="sel-boosters" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>STAGE 2 VACUUM UPPER ENGINE</label>
+                        <select id="sel-s2-engine" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>STAGE 2 ORBITAL TANK</label>
+                        <select id="sel-s2-tank" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>PAYLOAD FAIRING AEROSHELL</label>
+                        <select id="sel-fairing" class="custom-select"></select>
+                    </div>
+
+                    <!-- REAL NASA BENCHMARK ROCKET PHOTO DISPLAY -->
+                    <div class="nasa-real-data-box">
+                        <div class="nasa-data-header">
+                            <span>REAL NASA HISTORICAL BENCHMARK</span>
+                            <span id="nasa-benchmark-name">Saturn V (Apollo 11)</span>
+                        </div>
+                        <div class="nasa-benchmark-grid">
+                            <img src="assets/saturn_apollo.jpg" alt="NASA Benchmark Rocket" class="nasa-thumb" id="nasa-benchmark-img">
+                            <div class="nasa-benchmark-info" id="nasa-benchmark-info">
+                                <b>Liftoff Thrust:</b> 35,100 kN • <b>Total Mass:</b> 2,970 tons<br>
+                                <b>Isp:</b> 263s (SL) / 421s (Vac) • <b>Payload to LEO:</b> 140 tons<br>
+                                <i>100% Launch Success Record across all Apollo lunar missions.</i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Flight Dynamics & Tsiolkovsky Yield -->
+                <div class="vab-analytics-column">
+                    <div class="section-header">FLIGHT DYNAMICS ANALYSIS &amp; TSIOLKOVSKY YIELD</div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">LIFTOFF TOTAL MASS</span>
+                            <span class="metric-value" id="vab-mass">0 tons</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">TOTAL PROPELLANT MASS</span>
+                            <span class="metric-value" id="vab-fuel">0 tons</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">SEA-LEVEL THRUST</span>
+                            <span class="metric-value" id="vab-thrust">0 kN</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">LIFTOFF TWR</span>
+                            <span class="metric-value" id="vab-twr">1.25</span>
+                        </div>
+                    </div>
+
+                    <div class="deltav-card">
+                        <div class="dv-header">
+                            <span>TOTAL INTEGRATED DELTA-V (ΔV)</span>
+                            <span class="metric-value" id="vab-deltav">9,450 m/s</span>
+                        </div>
+                        <div class="dv-breakdown">
+                            <div>Stage 1 Yield: <b id="vab-s1-dv">4,200 m/s</b></div>
+                            <div>Stage 2 Yield: <b id="vab-s2-dv">5,250 m/s</b></div>
+                            <div>Est. Max Altitude: <b id="vab-altitude">350 km</b></div>
+                        </div>
+                    </div>
+
+                    <div class="cost-card">
+                        <span class="metric-label">VEHICLE PROCUREMENT COST / BUDGET</span>
+                        <span class="metric-value" id="vab-cost">$48.0M / $65.0M</span>
+                    </div>
+
+                    <!-- Flight Readiness Diagnostic -->
+                    <div id="vab-alert-box" class="alert-box alert-success">
+                        FLIGHT READINESS: Nominal configuration. Ready for rollout.
+                    </div>
+
+                    <div class="vab-launch-actions">
+                        <button class="btn btn-success btn-large" id="btn-vab-launch">ROLLOUT TO LAUNCH COMPLEX</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PAYLOAD CLEANROOM LAB -->
+    <div class="ui-modal" id="modal-spacecraft">
+        <div class="modal-dialog large">
+            <div class="modal-header">
+                <h2>PAYLOAD PROCESSING CLEANROOM • SUBSYSTEM INTEGRATION</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body modal-columns">
+                <div class="vab-controls-column">
+                    <div class="section-header">BUS SUBSYSTEMS ARCHITECTURE</div>
+
+                    <div class="form-group">
+                        <label>SPACECRAFT VEHICLE ARCHITECTURE</label>
+                        <select id="sel-sc-type" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ELECTRICAL POWER SUBSYSTEM (EPS)</label>
+                        <select id="sel-sc-power" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ORBITAL PROPULSION / REACTION CONTROL (RCS)</label>
+                        <select id="sel-sc-prop" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>COMMUNICATIONS / TELEMETRY ANTENNA</label>
+                        <select id="sel-sc-comm" class="custom-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>MISSION INSTRUMENTATION PAYLOAD</label>
+                        <select id="sel-sc-inst" class="custom-select"></select>
+                    </div>
+                </div>
+
+                <div class="vab-analytics-column">
+                    <div class="section-header">TELEMETRY &amp; ELECTRICAL POWER BUDGET</div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">SPACECRAFT WET MASS</span>
+                            <span class="metric-value" id="sc-mass">1,450 kg</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">EPS POWER GENERATION</span>
+                            <span class="metric-value" id="sc-power-gen">2,400 W</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">BUS POWER CONSUMPTION</span>
+                            <span class="metric-value" id="sc-power-demand">730 W</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">NET POWER MARGIN</span>
+                            <span class="metric-value" id="sc-power-margin">+1,670 W</span>
+                        </div>
+                    </div>
+
+                    <div class="deltav-card">
+                        <div>Onboard Maneuver Delta-V: <b id="sc-deltav">620 m/s</b></div>
+                        <div>Procurement Subtotal: <b id="sc-cost">$12.5M</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: R&D TECH LAB -->
+    <div class="ui-modal" id="modal-tech">
+        <div class="modal-dialog large">
+            <div class="modal-header">
+                <h2>PROPULSION &amp; MATERIALS RESEARCH LABORATORY</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-subtitle">Allocate accumulated Research Points (RP) from mission telemetry downlinks to advance aerospace technology readiness levels (TRL).</p>
+                <div id="tech-list" class="tech-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: POST-FLIGHT DEBRIEF (NASA LESSONS LEARNED & FAILURE ANALYSIS) -->
+    <div class="ui-modal" id="modal-debrief">
+        <div class="modal-dialog large">
+            <div class="modal-header">
+                <h2 id="debrief-title">NASA FLIGHT DEBRIEF &amp; FAILURE ANALYSIS</h2>
+                <button class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="debrief-badge" class="grade-badge grade-a">GRADE A</div>
+                <div id="debrief-content" class="debrief-content-box"></div>
+                
+                <!-- NASA LLIS Lessons Learned & Suggestions Section -->
+                <div id="debrief-nasa-section"></div>
+
+                <div id="debrief-rewards" class="debrief-rewards-box"></div>
+                <button class="btn btn-primary modal-close-btn" style="margin-top: 16px; width: 100%;">RETURN TO FLIGHT OPERATIONS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="libs/three.min.js"></script>
+    <script src="libs/OrbitControls.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/textures.js"></script>
+    <script src="js/nasa_data.js"></script>
+    <script src="js/celestial.js"></script>
+    <script src="js/rocket_parts.js"></script>
+    <script src="js/spacecraft_parts.js"></script>
+    <script src="js/missions.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/engineering.js"></script>
+    <script src="js/rocket_builder.js"></script>
+    <script src="js/spacecraft_builder.js"></script>
+    <script src="js/headquarters.js"></script>
+    <script src="js/launch_simulation.js"></script>
+    <script src="js/space_flight.js"></script>
+    <script src="js/progression.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
